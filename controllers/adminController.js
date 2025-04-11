@@ -3,6 +3,9 @@ const cloudinary = require('../config/cloudinary');
 
 // Admin login
 const adminLogin = (req, res) => {
+  console.log('Login attempt - Request body:', req.body);
+  console.log('Login attempt - Current session:', req.session);
+  
   const { password } = req.body;
   
   // Check if the password matches
@@ -10,11 +13,27 @@ const adminLogin = (req, res) => {
     // Set admin authentication in session
     req.session.adminAuth = true;
     
-    res.status(200).json({
-      success: true,
-      message: 'Admin login successful',
+    // Save the session explicitly
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error during login:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to save session',
+          error: err.message
+        });
+      }
+      
+      console.log('Login successful - Updated session:', req.session);
+      res.status(200).json({
+        success: true,
+        message: 'Admin login successful',
+        session: req.session.id,
+        adminAuth: req.session.adminAuth
+      });
     });
   } else {
+    console.log('Login failed - Invalid password');
     res.status(401).json({
       success: false,
       message: 'Invalid password',
@@ -24,12 +43,29 @@ const adminLogin = (req, res) => {
 
 // Admin logout
 const adminLogout = (req, res) => {
+  console.log('Logout attempt - Current session:', req.session);
+  
   // Clear admin authentication from session
   req.session.adminAuth = false;
   
-  res.status(200).json({
-    success: true,
-    message: 'Admin logout successful',
+  // Save the session explicitly
+  req.session.save((err) => {
+    if (err) {
+      console.error('Session save error during logout:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to save session',
+        error: err.message
+      });
+    }
+    
+    console.log('Logout successful - Updated session:', req.session);
+    res.status(200).json({
+      success: true,
+      message: 'Admin logout successful',
+      session: req.session.id,
+      adminAuth: req.session.adminAuth
+    });
   });
 };
 
