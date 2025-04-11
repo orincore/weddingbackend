@@ -2,30 +2,36 @@ const isAdmin = (req, res, next) => {
   console.log('Auth middleware - Session:', req.session);
   console.log('Auth middleware - Cookies:', req.headers.cookie);
   console.log('Auth middleware - adminAuth status:', req.session?.adminAuth);
+  console.log('Auth middleware - Query params:', req.query);
 
-  const { adminAuth } = req.session || {};
+  // Check if the admin auth is in the session
+  const sessionAuth = req.session?.adminAuth === true;
+  
+  // Check if the auth is in the query parameters (fallback method)
+  const queryAuth = req.query.adminKey === process.env.ADMIN_PASSWORD;
 
-  if (!adminAuth) {
-    console.log('Auth failed: No adminAuth in session');
-    return res.status(401).json({ 
-      message: 'Not authorized, no token',
-      session: req.session ? 'exists' : 'missing', 
-      adminAuth: adminAuth ? 'true' : 'false'
-    });
-  }
-
-  try {
-    if (adminAuth) {
-      console.log('Auth successful: adminAuth is valid');
-      next();
-    } else {
-      console.log('Auth failed: adminAuth is invalid');
-      res.status(401).json({ message: 'Not authorized' });
+  // If either method validates, allow access
+  if (sessionAuth || queryAuth) {
+    console.log('Auth successful: Authorization valid');
+    
+    // If using query auth, set the session auth for future requests
+    if (queryAuth && !sessionAuth && req.session) {
+      req.session.adminAuth = true;
+      console.log('Setting session auth from query param');
     }
-  } catch (error) {
-    console.error('Auth error:', error);
-    res.status(401).json({ message: 'Not authorized, token failed' });
+    
+    next();
+    return;
   }
+  
+  // If no valid auth method, deny access
+  console.log('Auth failed: No valid authorization found');
+  return res.status(401).json({ 
+    message: 'Not authorized, no token',
+    session: req.session ? 'exists' : 'missing',
+    sessionAuth: sessionAuth ? 'true' : 'false',
+    queryAuth: queryAuth ? 'true' : 'false'
+  });
 };
 
 module.exports = { isAdmin }; 
