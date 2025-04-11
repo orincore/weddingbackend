@@ -10,11 +10,11 @@ router.post('/login', adminLogin);
 router.post('/logout', adminLogout);
 
 // Route: GET /api/admin/uploads
-// Temporarily removed isAdmin middleware for direct access
-router.get('/uploads', getAllUploads);
+// Restore isAdmin middleware for proper authentication
+router.get('/uploads', isAdmin, getAllUploads);
 
 // Route: DELETE /api/admin/delete/:id
-// Temporarily removed isAdmin middleware for direct access
-router.delete('/delete/:id', deletePhoto);
+// Restore isAdmin middleware for proper authentication
+router.delete('/delete/:id', isAdmin, deletePhoto);
 
 module.exports = router; 
